@@ -1,0 +1,20 @@
+[remote.gpu-server-1]
+host = "67.0.0.5"
+user = "etsme"
+port = 22
+password = "l7OiD3QuWNI#sC"
+description = "RTX 4090 GPU Server"
+
+# 硬件后端优先级：CUDA > CPU
+# Phase 0-1 验证：单卡 int4 量化
+
+[backend]
+supported = ["cuda", "cpu"]  # 排除 rkllm（NPU）
+auto_detect = true
+
+[model]
+# 测试用 int4 量化模型
+test_model_path = "/models/Qwen3-35B-A3B.Q4_K_M.gguf"
+context_size = 8192
+max_prompt_tokens = 8192
+max_generation_tokens = 2048

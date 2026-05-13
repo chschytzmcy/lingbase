@@ -1,0 +1,6 @@
+.venv/
+target/
+.idea/
+.claude/
+llama-*-bin-*.tar.gz
+Cargo.lock
