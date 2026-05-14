@@ -3,8 +3,11 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+# POSIX compatible way to get script directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Project root directory (scripts/ is in project root)
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT"
 
 # Detect system architecture
 detect_arch() {
@@ -25,8 +28,8 @@ detect_arch() {
 
 # Detect CUDA availability
 detect_cuda() {
-    if command -v nvidia-smi &> /dev/null; then
-        if nvidia-smi &> /dev/null; then
+    if command -v nvidia-smi > /dev/null 2>&1; then
+        if nvidia-smi > /dev/null 2>&1; then
             echo "cuda"
             return
         fi
@@ -35,7 +38,7 @@ detect_cuda() {
 }
 
 # Main library directory
-LIB_DIR="$SCRIPT_DIR/lib"
+LIB_DIR="$PROJECT_ROOT/lib"
 
 # Auto-detect architecture
 ARCH=$(detect_arch)
