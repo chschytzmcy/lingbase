@@ -1,9 +1,9 @@
 //! HTTP handlers using Axum.
 
-use axum::{Router, routing::post, Json, extract::State, http::StatusCode, response::{sse::{Event, Sse}, IntoResponse}};
+use axum::{Router, routing::{post, get}, Json, extract::State, http::StatusCode, response::{sse::{Event, Sse}, IntoResponse}};
 use futures::stream::StreamExt as _;
 use std::sync::Arc;
-use crate::api::types::{ChatCompletionRequest, ChatCompletionResponse, Message, Choice, Usage, StreamChunk, StreamChoice, Delta};
+use crate::api::types::{ChatCompletionRequest, ChatCompletionResponse, Message, Choice, Usage, StreamChunk, StreamChoice, Delta, ModelsResponse, ModelInfo};
 use crate::backend::{InferenceBackend, InferenceConfig};
 use crate::infra::health::HealthCheck;
 use crate::infra::logging::RequestLogger;
@@ -157,5 +157,25 @@ pub async fn chat_completions_handler(
 pub fn create_app_router(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/v1/chat/completions", post(chat_completions_handler))
+        .route("/v1/models", get(models_handler))
         .with_state(state)
+}
+
+pub async fn models_handler() -> Json<ModelsResponse> {
+    let created = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+
+    Json(ModelsResponse {
+        object: "list".to_string(),
+        data: vec![
+            ModelInfo {
+                id: "Qwen3-4B".to_string(),
+                object: "model".to_string(),
+                created,
+                owned_by: "Qwen".to_string(),
+            },
+        ],
+    })
 }

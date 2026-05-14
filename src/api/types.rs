@@ -75,3 +75,18 @@ pub struct Delta {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
 }
+
+// Models list types
+#[derive(Debug, Serialize)]
+pub struct ModelsResponse {
+    pub object: String,
+    pub data: Vec<ModelInfo>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ModelInfo {
+    pub id: String,
+    pub object: String,
+    pub created: u64,
+    pub owned_by: String,
+}

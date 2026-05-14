@@ -105,6 +105,9 @@ curl -X POST http://localhost:11017/v1/chat/completions \
 
 # 健康检查
 curl http://localhost:11017/health
+
+# 模型列表
+curl http://localhost:11017/v1/models
 ```
 
 ## API 接口
