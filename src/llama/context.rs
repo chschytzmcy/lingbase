@@ -1,45 +1,82 @@
 //! LlamaContext wrapper - manages inference context.
 
 use crate::error::{InferenceResult, InferenceError};
-
-#[repr(C)]
-#[derive(Debug, Clone, Default)]
-pub struct llama_context_params {
-    pub n_ctx: i32,
-    pub n_parts: i32,
-    pub n_gpu_layers: i32,
-    pub seed: u32,
-    pub logits_all: bool,
-    pub embedding: bool,
-    pub n_threads: u32,
-    pub n_threads_batch: u32,
-    pub flash: bool,
-    pub auto_continue: bool,
-}
-
-pub type llama_token = i32;
-
-extern "C" {
-    fn llama_new_context_with_model(model: *mut libc::c_void, params: llama_context_params) -> *mut libc::c_void;
-    fn llama_free_ctx(ctx: *mut libc::c_void);
-    fn llama_kv_cache_clear(ctx: *mut libc::c_void);
-    fn llama_kv_cache_seq_rm(ctx: *mut libc::c_void, seq_from: i32, seq_to: i32, p0: i32);
-}
+use super::ffi::{
+    ContextPtr, ModelPtr,
+    llama_context_default_params, llama_init_from_model, llama_free,
+    llama_get_logits, llama_n_ctx,
+    LlamaBatch,
+};
 
 pub struct LlamaContext {
-    initialized: bool,
+    ptr: Option<ContextPtr>,
+    n_ctx: u32,
 }
 
+unsafe impl Send for LlamaContext {}
+unsafe impl Sync for LlamaContext {}
+
 impl LlamaContext {
-    pub fn new(_model_ptr: *mut libc::c_void, _n_ctx: i32, _n_threads: u32) -> InferenceResult<Self> {
-        Err(InferenceError::BackendNotInitialized)
+    pub fn new(model_ptr: ModelPtr, n_ctx: u32, n_threads: u32) -> InferenceResult<Self> {
+        if model_ptr.is_null() {
+            return Err(InferenceError::ModelNotLoaded);
+        }
+
+        let mut params = unsafe { llama_context_default_params() };
+        params.n_ctx = n_ctx;
+        params.n_threads = n_threads as i32;
+        params.n_threads_batch = n_threads as i32;
+
+        let ctx_ptr = unsafe { llama_init_from_model(model_ptr, params) };
+
+        if ctx_ptr.is_null() {
+            return Err(InferenceError::BackendError(
+                "Failed to create llama context".to_string()
+            ));
+        }
+
+        let actual_n_ctx = unsafe { llama_n_ctx(ctx_ptr) };
+
+        Ok(Self {
+            ptr: Some(ctx_ptr),
+            n_ctx: actual_n_ctx,
+        })
     }
 
-    pub fn clear_cache(&self) {}
+    pub fn ptr(&self) -> Option<ContextPtr> {
+        self.ptr
+    }
 
-    pub fn seq_remove(&self, _seq_from: i32, _seq_to: i32, _p0: i32) {}
+    pub fn decode(&self, batch: LlamaBatch) -> InferenceResult<()> {
+        let ctx = self.ptr.ok_or(InferenceError::BackendNotInitialized)?;
+        let result = unsafe { super::ffi::llama_decode(ctx, batch) };
+        if result != 0 {
+            return Err(InferenceError::InferenceFailed(
+                format!("llama_decode failed with code {}", result)
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn get_logits(&self, n_vocab: usize) -> Option<&[f32]> {
+        let ctx = self.ptr?;
+        let logits = unsafe { llama_get_logits(ctx) };
+        if logits.is_null() {
+            None
+        } else {
+            Some(unsafe { std::slice::from_raw_parts(logits, n_vocab) })
+        }
+    }
+
+    pub fn clear_cache(&self) {
+        // Memory management handled by context
+    }
 }
 
 impl Drop for LlamaContext {
-    fn drop(&mut self) {}
+    fn drop(&mut self) {
+        if let Some(ptr) = self.ptr {
+            unsafe { llama_free(ptr) };
+        }
+    }
 }

@@ -1,3 +1,8 @@
+[server]
+host = "0.0.0.0"
+port = 8080
+workers = 4
+
 [remote.gpu-server-1]
 host = "67.0.0.5"
 user = "etsme"
@@ -13,8 +18,8 @@ supported = ["cuda", "cpu"]  # 排除 rkllm（NPU）
 auto_detect = true
 
 [model]
-# 测试用 int4 量化模型
-test_model_path = "/models/Qwen3-35B-A3B.Q4_K_M.gguf"
+# 测试用 Q8_0 模型 (非AWQ)
+test_model_path = "/home/etsme/.cache/modelscope/hub/models/Qwen/Qwen3-4B-GGUF/Qwen3-4B-Q8_0.gguf"
 context_size = 8192
 max_prompt_tokens = 8192
 max_generation_tokens = 2048

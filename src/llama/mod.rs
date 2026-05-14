@@ -4,8 +4,9 @@ pub mod model;
 pub mod context;
 pub mod batch;
 pub mod tokenize;
+pub mod ffi;
 
 pub use model::LlamaModel;
 pub use context::LlamaContext;
-pub use batch::{llama_batch, llama_eval, llama_decode};
 pub use tokenize::Tokenizer;
+pub use ffi::LlamaBatch;

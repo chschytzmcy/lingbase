@@ -1,59 +1,95 @@
 //! LlamaModel wrapper - manages model loading and lifecycle.
-//!
-//! Note: This module contains FFI bindings to llama.cpp C API.
-//! Without a compiled llama.cpp library, these will panic at runtime.
 
 use std::path::Path;
+use std::ffi::CString;
 use crate::error::{InferenceError, InferenceResult};
+use super::ffi::{
+    ModelPtr, VocabPtr,
+    llama_model_default_params, llama_model_load_from_file,
+    llama_model_free, llama_model_get_vocab,
+    llama_model_n_ctx_train, llama_vocab_n_tokens, ggml_backend_load_all_from_path,
+};
 
-#[repr(C)]
-#[derive(Debug, Clone, Default)]
-pub struct llama_model_params {
-    pub n_gpu_layers: i32,
-    pub main_gpu: i32,
-    pub tensor_split: *const f32,
-    pub rpc_servers: *const libc::c_char,
-    pub progress_callback: Option<unsafe extern "C" fn(progress: f32, ctx: *mut libc::c_void)>,
-    pub progress_callback_user_data: *mut libc::c_void,
-    pub kv_overrides: *mut libc::c_void,
-    pub spa: bool,
-    pub mul_mat: bool,
-    pub f16_kv: bool,
-    pub use_mmap: bool,
-    pub use_mlock: bool,
-    pub va: bool,
-}
-
-extern "C" {
-    fn llama_model_default_params() -> llama_model_params;
-    fn llama_load_model_file(path: *const libc::c_char, params: llama_model_params) -> *mut libc::c_void;
-    fn llama_free_model(ctx: *mut libc::c_void);
-    fn llama_model_is_loaded(ctx: *mut libc::c_void) -> bool;
-    fn llama_model_n_ctx_train(ctx: *mut libc::c_void) -> i32;
-}
-
-/// LlamaModel wraps a llama.cpp model instance
 pub struct LlamaModel {
-    loaded: bool,
+    ptr: Option<ModelPtr>,
+    vocab: Option<VocabPtr>,
+    n_vocab: i32,
+    n_ctx_train: i32,
 }
+
+unsafe impl Send for LlamaModel {}
+unsafe impl Sync for LlamaModel {}
 
 impl LlamaModel {
-    pub fn from_file<P: AsRef<Path>>(_path: P, _n_gpu_layers: i32) -> InferenceResult<Self> {
-        // TODO: llama.cpp not compiled - return stub
-        Err(InferenceError::ModelNotLoaded)
+    pub fn from_file<P: AsRef<Path>>(path: P, n_gpu_layers: i32) -> InferenceResult<Self> {
+        use std::ffi::CString;
+
+        // Load ggml backends from the library directory
+        let lib_dir = std::path::Path::new("lib/x86_64");
+        let lib_dir_c = CString::new(lib_dir.to_string_lossy().as_bytes()).unwrap();
+        unsafe { ggml_backend_load_all_from_path(lib_dir_c.as_ptr()) };
+
+        let path_str = path.as_ref().to_string_lossy().into_owned();
+
+        let path_c = CString::new(path_str)
+            .map_err(|e| InferenceError::InvalidPath(e.to_string()))?;
+
+        let mut params = unsafe { llama_model_default_params() };
+        params.n_gpu_layers = n_gpu_layers;
+        params.use_mmap = true;
+        params.use_mlock = false;
+
+        let model_ptr = unsafe {
+            llama_model_load_from_file(path_c.as_ptr(), params)
+        };
+
+        if model_ptr.is_null() {
+            return Err(InferenceError::ModelLoadFailed(
+                path.as_ref().display().to_string()
+            ));
+        }
+
+        let vocab_ptr = unsafe { llama_model_get_vocab(model_ptr) };
+        let n_vocab = if vocab_ptr.is_null() {
+            0
+        } else {
+            unsafe { llama_vocab_n_tokens(vocab_ptr) }
+        };
+        let n_ctx_train = unsafe { llama_model_n_ctx_train(model_ptr) };
+
+        Ok(Self {
+            ptr: Some(model_ptr),
+            vocab: Some(vocab_ptr),
+            n_vocab,
+            n_ctx_train,
+        })
     }
 
     pub fn is_loaded(&self) -> bool {
-        self.loaded
+        self.ptr.is_some()
+    }
+
+    pub fn ptr(&self) -> Option<ModelPtr> {
+        self.ptr
+    }
+
+    pub fn vocab_ptr(&self) -> Option<VocabPtr> {
+        self.vocab
+    }
+
+    pub fn n_vocab(&self) -> i32 {
+        self.n_vocab
     }
 
     pub fn n_ctx_train(&self) -> i32 {
-        4096
+        self.n_ctx_train
     }
 }
 
 impl Drop for LlamaModel {
     fn drop(&mut self) {
-        // No-op since model not actually loaded
+        if let Some(ptr) = self.ptr {
+            unsafe { llama_model_free(ptr) };
+        }
     }
 }

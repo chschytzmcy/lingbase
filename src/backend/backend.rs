@@ -46,4 +46,6 @@ pub trait InferenceBackend: Send + Sync {
     fn forward(&self, tokens: &[i32], config: &InferenceConfig) -> InferenceResult<ForwardResult>;
     fn max_context_size(&self) -> usize;
     fn sample_token(&self, logits: &[f32], config: &InferenceConfig) -> i32;
+    fn tokenize(&self, text: &str) -> InferenceResult<Vec<i32>>;
+    fn detokenize(&self, tokens: &[i32]) -> InferenceResult<String>;
 }

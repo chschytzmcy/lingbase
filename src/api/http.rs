@@ -27,6 +27,15 @@ pub async fn chat_completions_handler(
         .collect::<Vec<_>>()
         .join("\n");
 
+    // Build prompt from messages using Qwen3 chat template
+    let mut prompt = request.messages.iter()
+        .map(|m| format!("<|im_start|>{}\n{}<|im_end|>", m.role, m.content))
+        .collect::<Vec<_>>()
+        .join("\n");
+    // Add assistant start token so model knows to generate response
+    // Add /no_think to disable Qwen3 thinking mode
+    prompt.push_str("<|im_start|>assistant\n/no_think\n");
+
     let start = std::time::Instant::now();
     let inf_config = InferenceConfig {
         max_tokens: request.max_tokens.unwrap_or(256),
@@ -37,11 +46,20 @@ pub async fn chat_completions_handler(
         timeout_ms: request.timeout_ms,
     };
 
-    let result = state.backend.forward(&[], &inf_config)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let input_tokens = state.backend.tokenize(&prompt)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Tokenization failed: {}", e)))?;
+
+    let result = state.backend.forward(&input_tokens, &inf_config)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Inference failed: {}", e)))?;
 
     let inference_ms = start.elapsed().as_millis() as u64;
     logger.log_request_complete(result.tokens.len(), inference_ms, result.first_token_ms);
+
+    // Detokenize output and trim leading whitespace (from /no_think formatting)
+    let response_text = state.backend.detokenize(&result.tokens)
+        .unwrap_or_else(|_| "Failed to decode response".to_string())
+        .trim_start()
+        .to_string();
 
     let response = ChatCompletionResponse {
         id: format!("chatcmpl-{}", request_id),
@@ -55,14 +73,14 @@ pub async fn chat_completions_handler(
             index: 0,
             message: Message {
                 role: "assistant".to_string(),
-                content: "Response placeholder".to_string(),
+                content: response_text,
             },
             finish_reason: "stop".to_string(),
         }],
         usage: Usage {
-            prompt_tokens: 0,
+            prompt_tokens: input_tokens.len(),
             completion_tokens: result.tokens.len(),
-            total_tokens: 0,
+            total_tokens: input_tokens.len() + result.tokens.len(),
         },
     };
 
