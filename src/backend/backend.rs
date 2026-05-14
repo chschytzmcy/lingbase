@@ -1,6 +1,7 @@
 //! InferenceBackend trait definition.
 
 use crate::error::InferenceResult;
+use futures::Stream;
 
 #[derive(Debug, Clone, Default)]
 pub struct MemoryStats {
@@ -39,11 +40,24 @@ pub struct ForwardResult {
     pub total_ms: u64,
 }
 
+#[derive(Debug, Clone)]
+pub struct StreamToken {
+    pub token: i32,
+    pub text: String,
+    pub is_first: bool,
+    pub is_done: bool,
+}
+
 pub trait InferenceBackend: Send + Sync {
     fn name(&self) -> &str;
     fn health_check(&self) -> bool;
     fn memory_stats(&self) -> MemoryStats;
     fn forward(&self, tokens: &[i32], config: &InferenceConfig) -> InferenceResult<ForwardResult>;
+    fn forward_stream(
+        &self,
+        tokens: &[i32],
+        config: &InferenceConfig,
+    ) -> std::pin::Pin<Box<dyn Stream<Item = InferenceResult<StreamToken>> + Send>>;
     fn max_context_size(&self) -> usize;
     fn sample_token(&self, logits: &[f32], config: &InferenceConfig) -> i32;
     fn tokenize(&self, text: &str) -> InferenceResult<Vec<i32>>;

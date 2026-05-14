@@ -50,3 +50,28 @@ pub struct Usage {
     pub completion_tokens: usize,
     pub total_tokens: usize,
 }
+
+// Streaming types
+#[derive(Debug, Serialize)]
+pub struct StreamChunk {
+    pub id: String,
+    pub object: String,
+    pub created: u64,
+    pub model: String,
+    pub choices: Vec<StreamChoice>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StreamChoice {
+    pub index: usize,
+    pub delta: Delta,
+    pub finish_reason: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Delta {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+}
