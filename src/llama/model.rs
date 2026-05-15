@@ -76,7 +76,13 @@ impl LlamaModel {
     /// Load model from file using CPU backend (lib/x86_64).
     /// This is a convenience method that calls from_file_with_backend with default CPU lib path.
     pub fn from_file<P: AsRef<Path>>(path: P, n_gpu_layers: i32) -> InferenceResult<Self> {
-        Self::from_file_with_backend(path, n_gpu_layers, &std::path::Path::new("lib/x86_64"))
+        let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
+        let lib_dir = match arch.as_str() {
+            "x86_64" => "lib/x86_64",
+            "aarch64" => "lib/aarch64",
+            _ => "lib/x86_64",
+        };
+        Self::from_file_with_backend(path, n_gpu_layers, &std::path::Path::new(lib_dir))
     }
 
     pub fn is_loaded(&self) -> bool {

@@ -3,16 +3,28 @@
 
 set -e
 
-# Get script directory (follow symlinks)
+# Project root detection - supports both project layout and package layout
 SCRIPT_SOURCE="$0"
 while [ -L "$SCRIPT_SOURCE" ]; do
     SCRIPT_SOURCE="$(readlink "$SCRIPT_SOURCE")"
 done
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
 
-# Project root is the directory containing run.sh
-PROJECT_ROOT="$SCRIPT_DIR"
-cd "$PROJECT_ROOT"
+# Check if lib/ is next to run.sh (package layout) or in parent (project layout)
+# Package layout: run.sh and lib/ are siblings, lib/ contains arch subdirs
+# Project layout: lib/ is in parent directory of scripts/, with arch subdirs
+if [ -d "$SCRIPT_DIR/lib" ] && [ -d "$SCRIPT_DIR/lib/x86_64" -o -d "$SCRIPT_DIR/lib/aarch64" -o -d "$SCRIPT_DIR/lib/cuda" ]; then
+    # Package layout: run.sh and lib/ are siblings
+    cd "$SCRIPT_DIR"
+    PROJECT_ROOT="$SCRIPT_DIR"
+elif [ -d "$SCRIPT_DIR/../lib" ] && [ -d "$SCRIPT_DIR/../lib/x86_64" -o -d "$SCRIPT_DIR/../lib/aarch64" -o -d "$SCRIPT_DIR/../lib/cuda" ]; then
+    # Project layout: lib/ is in parent directory of scripts/
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+    cd "$PROJECT_ROOT"
+else
+    echo "[lingbase] Error: lib/ directory not found" >&2
+    exit 1
+fi
 
 # Detect system architecture
 detect_arch() {
