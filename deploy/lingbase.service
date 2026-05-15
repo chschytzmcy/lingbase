@@ -1,0 +1,27 @@
+[Unit]
+Description=Lingbase Edge LLM Inference Service
+Documentation=https://github.com/your-org/lingbase
+After=network.target
+
+[Service]
+Type=simple
+User=etsme
+WorkingDirectory=/home/etsme/lingbase
+ExecStart=/home/etsme/lingbase/lingbase
+Restart=always
+RestartSec=10
+
+# Environment
+Environment=RUST_LOG=info
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lingbase
+
+# Resource limits
+LimitNOFILE=65536
+MemoryMax=16G
+
+[Install]
+WantedBy=multi-user.target

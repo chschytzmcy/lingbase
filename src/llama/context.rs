@@ -10,6 +10,7 @@ use super::ffi::{
 
 pub struct LlamaContext {
     ptr: Option<ContextPtr>,
+    #[allow(dead_code)]
     n_ctx: u32,
 }
 

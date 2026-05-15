@@ -1,0 +1,16 @@
+# Lingbase 部署配置
+
+[remote.gpu-server]
+host = "67.0.0.5"
+user = "etsme"
+port = 22
+password = "l7OiD3QuWNI#sC"
+description = "RTX 4090 GPU Server"
+
+[remote.arm-server]
+host = "67.0.0.10"
+user = "etsme"
+port = 22
+password = "password3"
+description = "ARM64 Server"
+arch = "aarch64"

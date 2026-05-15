@@ -3,22 +3,11 @@ host = "0.0.0.0"
 port = 11017
 workers = 4
 
-[remote.gpu-server-1]
-host = "67.0.0.5"
-user = "etsme"
-port = 22
-password = "l7OiD3QuWNI#sC"
-description = "RTX 4090 GPU Server"
-
-# 硬件后端优先级：CUDA > CPU
-# Phase 0-1 验证：单卡 int4 量化
-
 [backend]
-supported = ["cuda", "cpu"]  # 排除 rkllm（NPU）
+supported = ["cuda", "cpu"]
 auto_detect = true
 
 [model]
-# 测试用 Q8_0 模型 (非AWQ)
 test_model_path = "/home/etsme/.cache/modelscope/hub/models/Qwen/Qwen3-4B-GGUF/Qwen3-4B-Q4_K_M.gguf"
 context_size = 16384
 max_prompt_tokens = 16384

@@ -6,6 +6,7 @@ use crate::llama::ffi::{LlamaBatch, LlamaToken, llama_batch_get_one};
 /// Wrapper that keeps batch and its underlying token memory alive together
 pub struct BatchWithTokens {
     pub batch: LlamaBatch,
+    #[allow(dead_code)]
     tokens: Vec<LlamaToken>,
 }
 

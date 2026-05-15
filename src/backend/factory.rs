@@ -62,6 +62,7 @@ impl BackendFactory {
     }
 
     #[cfg(not(feature = "cuda"))]
+    #[allow(dead_code)]
     fn cuda_available() -> bool {
         false
     }

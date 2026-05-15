@@ -119,7 +119,7 @@ impl InferenceBackend for CpuBackend {
         let context = Arc::clone(&self.context);
         let tokenizer = Arc::clone(&self.tokenizer);
         let n_vocab = self.n_vocab;
-        let n_ctx = self.n_ctx;
+        let _n_ctx = self.n_ctx;
         let config = config.clone();
         let input_tokens = tokens.to_vec();
 
@@ -159,7 +159,7 @@ impl InferenceBackend for CpuBackend {
                 }
             };
 
-            let first_token_ms = start.elapsed().as_millis() as u64;
+            let _first_token_ms = start.elapsed().as_millis() as u64;
             let sampled_token = sample_token_impl(logits, &config, n_vocab);
 
             // Send first token
@@ -322,7 +322,7 @@ fn sample_token_impl(logits: &[f32], config: &InferenceConfig, n_vocab: usize) -
     // Find the selected index - probs corresponds to top-k candidates in indices
     let mut max_idx = 0;
     let mut max_val = f32::NEG_INFINITY;
-    for (i, &idx) in indices.iter().enumerate() {
+    for (i, &_idx) in indices.iter().enumerate() {
         if probs[i] > max_val {
             max_val = probs[i];
             max_idx = i;

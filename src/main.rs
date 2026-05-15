@@ -2,7 +2,6 @@
 
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tower_http::trace::TraceLayer;
 use tracing::info;
 
 use lingbase::{

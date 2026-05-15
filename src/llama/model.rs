@@ -1,7 +1,6 @@
 //! LlamaModel wrapper - manages model loading and lifecycle.
 
 use std::path::Path;
-use std::ffi::CString;
 use crate::error::{InferenceError, InferenceResult};
 use super::ffi::{
     ModelPtr, VocabPtr,
@@ -21,11 +20,20 @@ unsafe impl Send for LlamaModel {}
 unsafe impl Sync for LlamaModel {}
 
 impl LlamaModel {
-    pub fn from_file<P: AsRef<Path>>(path: P, n_gpu_layers: i32) -> InferenceResult<Self> {
+    /// Load model from file with specified backend library directory.
+    ///
+    /// # Arguments
+    /// * `path` - Path to the GGUF model file
+    /// * `n_gpu_layers` - Number of layers to offload to GPU (0 for CPU only)
+    /// * `lib_dir` - Directory containing llama.cpp libraries (e.g., "lib/x86_64" or "lib/cuda")
+    pub fn from_file_with_backend<P: AsRef<Path>>(
+        path: P,
+        n_gpu_layers: i32,
+        lib_dir: &std::path::Path,
+    ) -> InferenceResult<Self> {
         use std::ffi::CString;
 
-        // Load ggml backends from the library directory
-        let lib_dir = std::path::Path::new("lib/x86_64");
+        // Load ggml backends from the specified library directory
         let lib_dir_c = CString::new(lib_dir.to_string_lossy().as_bytes()).unwrap();
         unsafe { ggml_backend_load_all_from_path(lib_dir_c.as_ptr()) };
 

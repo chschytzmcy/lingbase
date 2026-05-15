@@ -3,65 +3,69 @@
 
 set -e
 
-# POSIX compatible way to get script directory
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# Project root directory (scripts/ is in project root)
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# Get script directory (follow symlinks)
+SCRIPT_SOURCE="$0"
+while [ -L "$SCRIPT_SOURCE" ]; do
+    SCRIPT_SOURCE="$(readlink "$SCRIPT_SOURCE")"
+done
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
+
+# Project root is the directory containing run.sh
+PROJECT_ROOT="$SCRIPT_DIR"
 cd "$PROJECT_ROOT"
 
 # Detect system architecture
 detect_arch() {
-    local arch=$(uname -m)
+    local arch="$(uname -m)"
     case "$arch" in
-        x86_64)
-            echo "x86_64"
-            ;;
-        aarch64|arm64)
-            echo "aarch64"
-            ;;
-        *)
-            echo "unsupported" >&2
-            exit 1
-            ;;
+        x86_64) echo "x86_64" ;;
+        aarch64|arm64) echo "aarch64" ;;
+        *) echo "unsupported" >&2; exit 1 ;;
     esac
 }
 
 # Detect CUDA availability
 detect_cuda() {
-    if command -v nvidia-smi > /dev/null 2>&1; then
-        if nvidia-smi > /dev/null 2>&1; then
-            echo "cuda"
-            return
-        fi
+    if command -v nvidia-smi > /dev/null 2>&1 && nvidia-smi > /dev/null 2>&1; then
+        echo "cuda"
+    else
+        echo "cpu"
     fi
-    echo "cpu"
 }
 
-# Main library directory
-LIB_DIR="$PROJECT_ROOT/lib"
+ARCH="$(detect_arch)"
+BACKEND="$(detect_cuda)"
 
-# Auto-detect architecture
-ARCH=$(detect_arch)
 echo "[lingbase] Detected architecture: $ARCH"
-
-# Auto-detect backend
-BACKEND=$(detect_cuda)
 echo "[lingbase] Detected backend: $BACKEND"
 
-# Set library path based on architecture
-LIB_ARCH_DIR="$LIB_DIR/$ARCH"
-if [ ! -d "$LIB_ARCH_DIR" ]; then
-    echo "[lingbase] Error: Library directory not found: $LIB_ARCH_DIR" >&2
+LIB_DIR="$PROJECT_ROOT/lib"
+
+# Determine library path based on architecture and backend
+# Structure: lib/cuda/ (CUDA), lib/x86_64/ (x86 CPU), lib/aarch64/ (ARM CPU)
+LIB_ARCH_DIR=""
+
+if [ "$BACKEND" = "cuda" ]; then
+    if [ -d "$LIB_DIR/cuda" ]; then
+        LIB_ARCH_DIR="$LIB_DIR/cuda"
+        echo "[lingbase] Loading CUDA libraries from: $LIB_DIR/cuda"
+    elif [ -f "$LIB_DIR/libggml-cuda.so" ]; then
+        # Fallback: new packaging may have CUDA libs directly in lib/
+        LIB_ARCH_DIR="$LIB_DIR"
+        echo "[lingbase] Loading CUDA libraries from: $LIB_DIR (fallback)"
+    else
+        echo "[lingbase] Error: CUDA libraries not found" >&2
+        exit 1
+    fi
+elif [ -d "$LIB_DIR/$ARCH" ]; then
+    LIB_ARCH_DIR="$LIB_DIR/$ARCH"
+    echo "[lingbase] Loading $ARCH libraries from: $LIB_DIR/$ARCH"
+else
+    echo "[lingbase] Error: Library directory not found" >&2
+    echo "[lingbase] Expected: $LIB_DIR/cuda, $LIB_DIR/x86_64, or $LIB_DIR/aarch64" >&2
     exit 1
 fi
 
-# For CUDA, also add CUDA library path
-if [ "$BACKEND" = "cuda" ]; then
-    LIB_ARCH_DIR="$LIB_ARCH_DIR:$LIB_DIR/cuda"
-    echo "[lingbase] Loading CUDA libraries"
-fi
-
-# Set library path
 export LD_LIBRARY_PATH="${LIB_ARCH_DIR}:${LD_LIBRARY_PATH}"
 
 # Verify libraries exist
@@ -70,7 +74,12 @@ if [ ! -f "$LIB_ARCH_DIR/libllama.so" ]; then
     exit 1
 fi
 
-echo "[lingbase] LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
-
-# Run the binary
-exec ./target/release/lingbase "$@"
+# Find and run the binary
+if [ -x "$PROJECT_ROOT/lingbase" ]; then
+    exec "$PROJECT_ROOT/lingbase" "$@"
+elif [ -x "$PROJECT_ROOT/target/release/lingbase" ]; then
+    exec "$PROJECT_ROOT/target/release/lingbase" "$@"
+else
+    echo "[lingbase] Error: lingbase binary not found" >&2
+    exit 1
+fi
