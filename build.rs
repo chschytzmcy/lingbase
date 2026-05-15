@@ -14,7 +14,7 @@ fn main() {
             (dir, libs)
         }
         "aarch64" => {
-            let dir = lib_dir.join("arm64");
+            let dir = lib_dir.join("aarch64");
             let libs = vec!["llama", "ggml", "ggml-base", "llama-common"];
             (dir, libs)
         }

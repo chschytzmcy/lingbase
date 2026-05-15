@@ -93,7 +93,7 @@ do_build() {
             log_warn "aarch64-linux-gnu-gcc not found, installing..."
             sudo apt-get install -y gcc-aarch64-linux-gnu > /dev/null 2>&1 || true
         fi
-        CARGO_TARGET=aarch64-unknown-linux-gnu cargo build --release --target aarch64-unknown-linux-gnu
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc cargo build --release --target aarch64-unknown-linux-gnu
     elif [[ "$HAS_CUDA" == "true" ]]; then
         cargo build --release --features cuda
     else

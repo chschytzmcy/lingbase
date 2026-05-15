@@ -27,7 +27,7 @@ async fn main() -> anyhow::Result<()> {
     );
 
     let backend = BackendFactory::create(
-        BackendType::Cpu,
+        BackendFactory::auto_detect(),
         std::path::Path::new(&config.model.test_model_path),
         config.model.context_size as i32,
     ).expect("Failed to create backend");

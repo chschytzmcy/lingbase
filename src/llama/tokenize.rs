@@ -117,7 +117,7 @@ impl Tokenizer {
                 self.vocab,
                 tokens.as_ptr(),
                 tokens.len() as i32,
-                buf.as_mut_ptr() as *mut i8,
+                buf.as_mut_ptr() as *mut libc::c_char,
                 buf.len() as i32,
                 remove_special,
                 unparse_special,

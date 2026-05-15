@@ -28,6 +28,7 @@ build: ## 构建当前平台
 
 build-x86_64: ## 构建 x86_64
 	cargo build --release
+	@mv -f target/release/lingbase target/release/lingbase-cpu 2>/dev/null || true
 
 build-aarch64: ## 构建 ARM64（需要交叉编译工具链）
 	@if ! command -v aarch64-linux-gnu-gcc > /dev/null 2>&1; then \
@@ -35,10 +36,12 @@ build-aarch64: ## 构建 ARM64（需要交叉编译工具链）
 		sudo apt-get install -y gcc-aarch64-linux-gnu || exit 1; \
 	fi
 	@rustup target add aarch64-unknown-linux-gnu 2>/dev/null || true
-	@CARGO_TARGET=aarch64-unknown-linux-gnu cargo build --release --target aarch64-unknown-linux-gnu
+	CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc CARGO_TARGET=aarch64-unknown-linux-gnu cargo build --release --target aarch64-unknown-linux-gnu
+	@mv -f target/aarch64-unknown-linux-gnu/release/lingbase target/aarch64-unknown-linux-gnu/release/lingbase-cpu 2>/dev/null || true
 
 build-x86_64-cuda: ## 构建 x86_64 CUDA 版
 	cargo build --release --features cuda
+	@mv -f target/release/lingbase target/release/lingbase-cuda 2>/dev/null || true
 
 build-all: ## 构建所有架构版本
 	make build-x86_64
@@ -92,20 +95,17 @@ package-aarch64: ## 打包 ARM64
 	mkdir -p dist/lingbase-$(VERSION)-aarch64/lib
 	mkdir -p dist/lingbase-$(VERSION)-aarch64/config
 	cp target/aarch64-unknown-linux-gnu/release/lingbase dist/lingbase-$(VERSION)-aarch64/
-	cp -r lib/arm64/* dist/lingbase-$(VERSION)-aarch64/lib/ 2>/dev/null || \
-		cp -r lib/aarch64/* dist/lingbase-$(VERSION)-aarch64/lib/ 2>/dev/null || true
+	cp -r lib/aarch64/* dist/lingbase-$(VERSION)-aarch64/lib/ 2>/dev/null || \
 	cp config/environment.toml dist/lingbase-$(VERSION)-aarch64/config/
 	cp scripts/run.sh dist/lingbase-$(VERSION)-aarch64/
 	tar -czf dist/lingbase-$(VERSION)-aarch64.tar.gz -C dist lingbase-$(VERSION)-aarch64
 	@echo "打包完成: dist/lingbase-$(VERSION)-aarch64.tar.gz"
 
 package-all: ## 打包所有架构版本
-	make clean
 	make build-x86_64
 	mkdir -p dist/lingbase-$(VERSION)-x86_64/lib
 	mkdir -p dist/lingbase-$(VERSION)-x86_64/config
-	cp target/release/lingbase dist/lingbase-$(VERSION)-x86_64/
-	mv target/release/lingbase target/release/lingbase-cpu
+	cp target/release/lingbase-cpu dist/lingbase-$(VERSION)-x86_64/
 	cp -r lib/x86_64/* dist/lingbase-$(VERSION)-x86_64/lib/
 	cp config/environment.toml dist/lingbase-$(VERSION)-x86_64/config/
 	cp scripts/run.sh dist/lingbase-$(VERSION)-x86_64/
@@ -114,8 +114,7 @@ package-all: ## 打包所有架构版本
 	make build-x86_64-cuda
 	mkdir -p dist/lingbase-$(VERSION)-x86_64-cuda/lib/cuda
 	mkdir -p dist/lingbase-$(VERSION)-x86_64-cuda/config
-	cp target/release/lingbase dist/lingbase-$(VERSION)-x86_64-cuda/
-	mv target/release/lingbase target/release/lingbase-cuda
+	cp target/release/lingbase-cuda dist/lingbase-$(VERSION)-x86_64-cuda/
 	cp -r lib/cuda/* dist/lingbase-$(VERSION)-x86_64-cuda/lib/cuda/
 	cp config/environment.toml dist/lingbase-$(VERSION)-x86_64-cuda/config/
 	cp scripts/run.sh dist/lingbase-$(VERSION)-x86_64-cuda/
@@ -124,9 +123,8 @@ package-all: ## 打包所有架构版本
 	-$(MAKE) build-aarch64
 	mkdir -p dist/lingbase-$(VERSION)-aarch64/lib
 	mkdir -p dist/lingbase-$(VERSION)-aarch64/config
-	cp target/aarch64-unknown-linux-gnu/release/lingbase dist/lingbase-$(VERSION)-aarch64/
-	cp -r lib/arm64/* dist/lingbase-$(VERSION)-aarch64/lib/ 2>/dev/null || \
-		cp -r lib/aarch64/* dist/lingbase-$(VERSION)-aarch64/lib/ 2>/dev/null || true
+	cp target/aarch64-unknown-linux-gnu/release/lingbase-cpu dist/lingbase-$(VERSION)-aarch64/
+	cp -r lib/aarch64/* dist/lingbase-$(VERSION)-aarch64/lib/ 2>/dev/null || true
 	cp config/environment.toml dist/lingbase-$(VERSION)-aarch64/config/
 	cp scripts/run.sh dist/lingbase-$(VERSION)-aarch64/
 	tar -czf dist/lingbase-$(VERSION)-aarch64.tar.gz -C dist lingbase-$(VERSION)-aarch64
