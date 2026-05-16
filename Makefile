@@ -38,15 +38,6 @@ build-aarch64: ## 构建 ARM64（需要交叉编译工具链）
 	@rustup target add aarch64-unknown-linux-gnu 2>/dev/null || true
 	CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc CARGO_TARGET=aarch64-unknown-linux-gnu cargo build --release --target aarch64-unknown-linux-gnu
 
-build-aarch64-rk-cpu: ## 构建 ARM64（使用 RK3588 兼容库）
-	@if ! command -v aarch64-linux-gnu-gcc > /dev/null 2>&1; then \
-		echo "安装交叉编译工具链..."; \
-		sudo apt-get install -y gcc-aarch64-linux-gnu || exit 1; \
-	fi
-	@rustup target add aarch64-unknown-linux-gnu 2>/dev/null || true
-	CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc CARGO_TARGET=aarch64-unknown-linux-gnu cargo build --release --target aarch64-unknown-linux-gnu
-	@mv -f target/aarch64-unknown-linux-gnu/release/lingbase target/aarch64-unknown-linux-gnu/release/lingbase-rk-cpu 2>/dev/null || true
-
 build-x86_64-cuda: ## 构建 x86_64 CUDA 版
 	cargo build --release --features cuda
 	@mv -f target/release/lingbase target/release/lingbase-cuda 2>/dev/null || true

@@ -8,40 +8,50 @@
 lib/
 ├── x86_64/              # Linux x86_64 CPU 库
 ├── cuda/                # Linux x86_64 NVIDIA CUDA GPU 库
-├── aarch64/             # Linux ARM64 CPU 库（glibc 2.35 编译，含 ARMv8.2+ 优化变体）
-└── aarch64-glibc-227/  # Linux ARM64 CPU 库（glibc 2.27 编译，firefly 本地编译）
+├── aarch64/             # Linux ARM64 CPU 库（软链接，指向 aarch64-rk-cpu）
+├── aarch64-raw/         # Linux ARM64 CPU 库（含 ARMv8.x 多架构优化变体）
+└── aarch64-rk-cpu/      # Linux ARM64 CPU 库（RK3588 设备本地编译版本）
 ```
 
-每个目录包含完整的 llama.cpp 动态库集合（`libllama.so`, `libggml*.so` 等）。
+## 软链接机制
 
-## 库文件说明
+`aarch64/` 是软链接，部署时通过 `deploy.toml` 的 `lib_dir` 指向实际目录：
 
-- `libllama.so` - 主推理库
-- `libggml.so` - 张量计算库
-- `libggml-base.so` - GGML 基础库
-- `libggml-cpu.so` - CPU 后端实现（符号链接，指向具体变体）
-- `libllama-common.so` - LLAMA 公共组件
-- `libmtmd.so` - 多线程/调度库
+```bash
+# 当前配置（RK3588 兼容）
+ln -sfn aarch64-rk-cpu lib/aarch64
+
+# 切换到原始优化版（需要 glibc 2.38+）
+ln -sfn aarch64-raw lib/aarch64
+```
 
 ## glibc 版本兼容性
 
-| 目录 | 最低 glibc | 兼容系统 | 编译环境 |
-|------|-----------|----------|----------|
-| `x86_64/` | 2.27 | Ubuntu 18.04+ | - |
-| `cuda/` | 2.27 | Ubuntu 18.04+ | - |
-| `aarch64/` | 2.35 | Ubuntu 22.04+ | Ubuntu 22.04 (glibc 2.35) |
-| `aarch64-glibc-227/` | 2.27 | Ubuntu 18.04+ | firefly Ubuntu 22.04 (glibc 2.35) 本地编译 |
+| 目录 | glibc 要求 | 适用设备 |
+|------|-----------|----------|
+| `x86_64/` | ≥ 2.27 | x86_64 服务器 |
+| `cuda/` | ≥ 2.27 | NVIDIA GPU 服务器 |
+| `aarch64-raw/` | ≥ 2.38 | 高版本 glibc 的 ARM64 设备 |
+| `aarch64-rk-cpu/` | ≥ 2.35 | RK3588 (Ubuntu 22.04) |
 
-## aarch64 vs aarch64-glibc-227
+**注意**：RK3588 设备 (arm-server) 系统为 Ubuntu 22.04，glibc 2.35，只能使用 `aarch64-rk-cpu/` 目录的库。
 
-### aarch64/ - ARMv8.2+ 优化版本
+## 库文件说明
 
-- 针对特定 ARM 核心架构优化的多版本库
-- 最低 glibc 2.35
-- 编译环境: Ubuntu 22.04 (glibc 2.35)
-- 适用于边缘设备、物联网芯片
+| 文件 | 说明 |
+|------|------|
+| `libllama.so` | 主推理库 |
+| `libggml.so` | 张量计算库 |
+| `libggml-base.so` | GGML 基础库 |
+| `libggml-cpu.so` | CPU 后端（符号链接，指向具体变体） |
+| `libllama-common.so` | LLAMA 公共组件 |
+| `libmtmd.so` | 多线程/调度库 |
 
-包含的优化库：
+## aarch64-raw vs aarch64-rk-cpu
+
+### aarch64-raw/ - 多架构优化版
+
+包含多个 ARM 核心架构优化库，运行时自动选择最优：
 
 | 库文件 | 对应 ARM 架构 |
 |--------|--------------|
@@ -50,25 +60,22 @@ lib/
 | `libggml-cpu-armv8.6_1.so` | ARMv8.6 |
 | `libggml-cpu-armv9.2_1.so` | ARMv9.2 |
 
-运行时 llama.cpp 会根据 CPU 特性自动选择最优的库文件。
+**要求**：glibc ≥ 2.38
 
-### aarch64-glibc-227/ - 通用版本
+### aarch64-rk-cpu/ - RK3588 兼容版
 
-- 只有一个 `libggml-cpu.so`
-- 最低 glibc 2.27，兼容 Ubuntu 18.04+
-- 在 firefly Ubuntu 22.04 (glibc 2.35) 本地编译
-- 适用于大多数 ARM64 服务器
+从 RK3588 设备本地编译，只有一个 `libggml-cpu.so`。
+
+**要求**：glibc ≥ 2.35
 
 ## 部署配置
 
-部署 ARM64 服务器时，在 `config/deploy.toml` 中指定 `lib_dir` 选择库版本：
+在 `config/deploy.toml` 中指定 `lib_dir`：
 
 ```toml
 [remote.arm-server]
 arch = "aarch64"
-lib_dir = "aarch64-glibc-227"  # 使用通用版本 (glibc 2.27)
-# 或
-lib_dir = "aarch64"             # 使用优化版本 (glibc 2.35)
+lib_dir = "aarch64"        # 通过软链接使用（当前指向 aarch64-rk-cpu）
 ```
 
 ## 获取产物
@@ -84,8 +91,6 @@ cp /tmp/x64_extract/llama-b9129/lib*.so* lib/x86_64/
 
 ### 2. aarch64 (ARM64) - 远程编译
 
-在 ARM 服务器 (192.168.0.124) 上编译后复制：
-
 ```bash
 # 在 ARM 服务器上编译 llama.cpp
 cd ~ && mkdir -p build && cd build
@@ -94,23 +99,21 @@ cd llama.cpp && git checkout b9174
 cmake -B build -DGGML_CPU=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 
-# 复制产物到本项目
-scp firefly@192.168.0.124:/home/firefly/llama.cpp/build/bin/lib*.so* lib/aarch64/
+# 复制到本项目
+scp firefly@192.168.0.124:/home/firefly/llama.cpp/build/bin/lib*.so* lib/aarch64-raw/
 ```
 
 ### 3. cuda (GPU) - 远程编译
 
-在 GPU 服务器 (67.0.0.5) 上执行：
-
 ```bash
-# 编译
+# 在 GPU 服务器上编译
 cd ~ && mkdir -p build && cd build
 git clone https://github.com/ggml-org/llama.cpp.git
 cd llama.cpp && git checkout b9129
 cmake -B build -DGGML_CUDA=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 
-# 复制产物到本项目
+# 复制到本项目
 scp etsme@67.0.0.5:/home/etsme/llama.cpp/build/bin/lib*.so* lib/cuda/
 ```
 
@@ -123,9 +126,6 @@ export LD_LIBRARY_PATH=lib/cuda:$LD_LIBRARY_PATH
 # CPU 模式 (x86_64)
 export LD_LIBRARY_PATH=lib/x86_64:$LD_LIBRARY_PATH
 
-# CPU 模式 (ARM64 通用版)
-export LD_LIBRARY_PATH=lib/aarch64-glibc-227:$LD_LIBRARY_PATH
-
-# CPU 模式 (ARM64 优化版)
+# CPU 模式 (ARM64)
 export LD_LIBRARY_PATH=lib/aarch64:$LD_LIBRARY_PATH
 ```
