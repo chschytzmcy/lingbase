@@ -15,7 +15,8 @@ fn main() {
         }
         "aarch64" => {
             let dir = lib_dir.join("aarch64");
-            let libs = vec!["llama", "ggml", "ggml-base", "llama-common"];
+            // ggml-cpu and mtmd are required for aarch64
+            let libs = vec!["llama", "ggml", "ggml-base", "ggml-cpu", "llama-common", "mtmd"];
             (dir, libs)
         }
         _ => {

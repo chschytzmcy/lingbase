@@ -67,7 +67,7 @@ cargo build --release
 
 ```bash
 # 非流式请求
-curl -X POST http://localhost:11017/v1/chat/completions \
+curl -X POST http://192.168.0.124:11017/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "Qwen3-4B",
@@ -76,7 +76,7 @@ curl -X POST http://localhost:11017/v1/chat/completions \
   }'
 
 # 流式请求
-curl -X POST http://localhost:11017/v1/chat/completions \
+curl -X POST http://192.168.0.124:11017/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "Qwen3-4B",

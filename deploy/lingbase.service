@@ -5,9 +5,9 @@ After=network.target
 
 [Service]
 Type=simple
-User=etsme
-WorkingDirectory=/home/etsme/lingbase
-ExecStart=/home/etsme/lingbase/lingbase
+User=firefly
+WorkingDirectory=/home/firefly/lingbase/lingbase-0.1.0-aarch64
+ExecStart=/home/firefly/lingbase/lingbase-0.1.0-aarch64/lingbase
 Restart=always
 RestartSec=10
 

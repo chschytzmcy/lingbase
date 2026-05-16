@@ -134,7 +134,8 @@ do_package() {
         [[ -d "lib/cuda" ]] && cp -r lib/cuda/* "dist/${package_name}/lib/cuda/"
     else
         # CPU build: include arch-specific libraries in lib/x86_64/ or lib/aarch64/
-        [[ -d "lib/${arch}" ]] && { mkdir -p "dist/${package_name}/lib/${arch}"; cp -r "lib/${arch}"/* "dist/${package_name}/lib/${arch}/"; }
+        local lib_src="${REMOTE_LIB_DIR:-lib/${arch}}"
+        [[ -d "$lib_src" ]] && { mkdir -p "dist/${package_name}/lib/${arch}"; cp -r "$lib_src"/* "dist/${package_name}/lib/${arch}/"; }
     fi
 
     cp config/environment.toml "dist/${package_name}/config/"

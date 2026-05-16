@@ -91,11 +91,20 @@ impl LlamaModel {
 
         // Try both: relative to exe and relative to current dir
         let lib_path = exe_dir.join(&lib_dir);
-        let fallback_path = std::path::Path::new(&lib_dir);
+        let fallback_path = std::path::Path::new(lib_dir);
 
         if lib_path.exists() {
             Self::from_file_with_backend(path, n_gpu_layers, &lib_path)
+        } else if fallback_path.exists() {
+            Self::from_file_with_backend(path, n_gpu_layers, fallback_path)
         } else {
+            // Last resort: try aarch64 if we're on ARM and x86_64 doesn't exist
+            if arch == "aarch64" && lib_dir == "lib/x86_64" {
+                let alt_path = std::path::Path::new("lib/aarch64");
+                if alt_path.exists() {
+                    return Self::from_file_with_backend(path, n_gpu_layers, alt_path);
+                }
+            }
             Self::from_file_with_backend(path, n_gpu_layers, fallback_path)
         }
     }

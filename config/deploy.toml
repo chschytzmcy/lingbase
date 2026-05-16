@@ -6,6 +6,8 @@ user = "etsme"
 port = 22
 password = "l7OiD3QuWNI#sC"
 description = "RTX 4090 GPU Server"
+arch = "x86_64"
+lib_dir = "cuda"
 
 [remote.arm-server]
 host = "192.168.0.124"
@@ -14,3 +16,4 @@ port = 22
 password = "firefly"
 description = "ARM64 Server"
 arch = "aarch64"
+lib_dir = "aarch64"

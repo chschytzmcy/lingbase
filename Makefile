@@ -37,7 +37,15 @@ build-aarch64: ## 构建 ARM64（需要交叉编译工具链）
 	fi
 	@rustup target add aarch64-unknown-linux-gnu 2>/dev/null || true
 	CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc CARGO_TARGET=aarch64-unknown-linux-gnu cargo build --release --target aarch64-unknown-linux-gnu
-	@mv -f target/aarch64-unknown-linux-gnu/release/lingbase target/aarch64-unknown-linux-gnu/release/lingbase-cpu 2>/dev/null || true
+
+build-aarch64-rk-cpu: ## 构建 ARM64（使用 RK3588 兼容库）
+	@if ! command -v aarch64-linux-gnu-gcc > /dev/null 2>&1; then \
+		echo "安装交叉编译工具链..."; \
+		sudo apt-get install -y gcc-aarch64-linux-gnu || exit 1; \
+	fi
+	@rustup target add aarch64-unknown-linux-gnu 2>/dev/null || true
+	CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc CARGO_TARGET=aarch64-unknown-linux-gnu cargo build --release --target aarch64-unknown-linux-gnu
+	@mv -f target/aarch64-unknown-linux-gnu/release/lingbase target/aarch64-unknown-linux-gnu/release/lingbase-rk-cpu 2>/dev/null || true
 
 build-x86_64-cuda: ## 构建 x86_64 CUDA 版
 	cargo build --release --features cuda
@@ -92,10 +100,10 @@ package-x86_64-cuda: ## 打包 x86_64 CUDA 版
 package-aarch64: ## 打包 ARM64
 	make clean
 	make build-aarch64
-	mkdir -p dist/lingbase-$(VERSION)-aarch64/lib
+	mkdir -p dist/lingbase-$(VERSION)-aarch64/lib/aarch64
 	mkdir -p dist/lingbase-$(VERSION)-aarch64/config
 	cp target/aarch64-unknown-linux-gnu/release/lingbase dist/lingbase-$(VERSION)-aarch64/
-	cp -r lib/aarch64/* dist/lingbase-$(VERSION)-aarch64/lib/ 2>/dev/null || \
+	cp lib/aarch64/*.so* dist/lingbase-$(VERSION)-aarch64/lib/aarch64/
 	cp config/environment.toml dist/lingbase-$(VERSION)-aarch64/config/
 	cp scripts/run.sh dist/lingbase-$(VERSION)-aarch64/
 	tar -czf dist/lingbase-$(VERSION)-aarch64.tar.gz -C dist lingbase-$(VERSION)-aarch64

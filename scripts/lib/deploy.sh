@@ -64,6 +64,7 @@ load_remote_config() {
     REMOTE_PASSWORD=""
     REMOTE_ARCH=""
     REMOTE_DIR=""
+    REMOTE_LIB_DIR=""
 
     while IFS= read -r line; do
         if [[ "$line" =~ \[remote\.[^]]+\] ]]; then
@@ -83,6 +84,8 @@ load_remote_config() {
                 REMOTE_PASSWORD=$(echo "$line" | sed 's/password = "\(.*\)"/\1/')
             elif [[ "$line" =~ ^arch[[:space:]]*= ]]; then
                 REMOTE_ARCH=$(echo "$line" | sed 's/arch = "\(.*\)"/\1/')
+            elif [[ "$line" =~ ^lib_dir[[:space:]]*= ]]; then
+                REMOTE_LIB_DIR=$(echo "$line" | sed 's/lib_dir = "\(.*\)"/\1/')
             fi
         fi
     done < "$config_file"
@@ -142,7 +145,7 @@ deploy_to_remote() {
     log_info "Extract and configure..."
     sshpass -p "${password}" ssh -o StrictHostKeyChecking=no -p ${port} ${user}@${host} << 'EOF'
 set -e
-cd /home/etsme/lingbase
+cd /home/firefly/lingbase
 
 PACKAGE_FILE=$(ls lingbase-*.tar.gz 2>/dev/null | head -1)
 if [[ -z "$PACKAGE_FILE" ]]; then
@@ -153,10 +156,10 @@ fi
 # Backup existing config if exists
 EXTRACTED_DIR=$(tar -tzf "$PACKAGE_FILE" | head -1 | cut -d/ -f1)
 CONFIG_BACKUP=""
-if [[ -d "/home/etsme/lingbase/config" ]]; then
+if [[ -d "/home/firefly/lingbase/config" ]]; then
     CONFIG_BACKUP="/tmp/config_backup_$(date +%Y%m%d_%H%M%S)"
     echo "[lingbase] Backup existing config to: $CONFIG_BACKUP"
-    cp -r /home/etsme/lingbase/config "$CONFIG_BACKUP"
+    cp -r /home/firefly/lingbase/config "$CONFIG_BACKUP"
 fi
 
 echo "Extracting: $PACKAGE_FILE"
