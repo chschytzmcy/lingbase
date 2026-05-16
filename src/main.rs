@@ -5,7 +5,7 @@ use tokio::net::TcpListener;
 use tracing::info;
 
 use lingbase::{
-    backend::{BackendFactory, BackendType},
+    backend::BackendFactory,
     infra::{AppConfig, HealthCheck, init_logging},
     api::{create_app_router, AppState},
 };

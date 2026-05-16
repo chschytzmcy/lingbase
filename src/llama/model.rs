@@ -82,7 +82,22 @@ impl LlamaModel {
             "aarch64" => "lib/aarch64",
             _ => "lib/x86_64",
         };
-        Self::from_file_with_backend(path, n_gpu_layers, &std::path::Path::new(lib_dir))
+
+        // Get the directory containing the executable
+        let exe_dir = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+            .unwrap_or_default();
+
+        // Try both: relative to exe and relative to current dir
+        let lib_path = exe_dir.join(&lib_dir);
+        let fallback_path = std::path::Path::new(&lib_dir);
+
+        if lib_path.exists() {
+            Self::from_file_with_backend(path, n_gpu_layers, &lib_path)
+        } else {
+            Self::from_file_with_backend(path, n_gpu_layers, fallback_path)
+        }
     }
 
     pub fn is_loaded(&self) -> bool {
