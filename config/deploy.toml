@@ -8,9 +8,9 @@ password = "l7OiD3QuWNI#sC"
 description = "RTX 4090 GPU Server"
 
 [remote.arm-server]
-host = "67.0.0.10"
-user = "etsme"
+host = "192.168.0.124"
+user = "firefly"
 port = 22
-password = "password3"
+password = "firefly"
 description = "ARM64 Server"
 arch = "aarch64"

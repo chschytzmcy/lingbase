@@ -6,8 +6,9 @@
 
 - **OpenAI 兼容**: 支持 `/v1/chat/completions` API
 - **流式输出**: SSE 实时 token 流式返回
-- **跨平台**: 支持 x86/ARM CPU
+- **跨平台**: 支持 x86/ARM CPU，可扩展 CUDA/RKLLM
 - **轻量高效**: 基于 llama.cpp，无重型依赖
+- **性能指标**: TTFT、ITL、Throughput、E2E、P90/P99 分位数
 
 ## 快速开始
 
@@ -31,14 +32,6 @@ pip install modelscope
 
 # 下载 Qwen3-4B-GGUF (推荐 Q4_K_M 量化)
 modelscope download --model Qwen/Qwen3-4B-GGUF --include "Qwen3-4B-Q4_K_M.gguf"
-
-# 或下载其他量化版本
-modelscope download --model Qwen/Qwen3-4B-GGUF --include "Qwen3-4B-Q8_0.gguf"
-```
-
-模型下载路径默认为：
-```
-~/.cache/modelscope/hub/models/Qwen/Qwen3-4B-GGUF/
 ```
 
 #### 从 HuggingFace 下载
@@ -51,17 +44,6 @@ pip install huggingface_hub
 huggingface-cli download Qwen/Qwen3-4B-GGUF Qwen3-4B-Q4_K_M.gguf --local-dir ./models
 ```
 
-#### GGUF 量化模型对比
-
-| 文件名 | 大小 | 适用场景 |
-|--------|------|----------|
-| Qwen3-4B-Q4_K_M.gguf | 2.4G | 边缘设备，内存受限 |
-| Qwen3-4B-Q5_K_M.gguf | 2.7G | 平衡速度与质量 (推荐) |
-| Qwen3-4B-Q6_K.gguf | 3.1G | 高质量推理 |
-| Qwen3-4B-Q8_0.gguf | 4.0G | 接近原始精度 |
-
-详见 [GGUF 量化说明](docs/gguf-quantization.md)。
-
 ### 3. 配置模型路径
 
 修改 `config/environment.toml`：
@@ -69,8 +51,8 @@ huggingface-cli download Qwen/Qwen3-4B-GGUF Qwen3-4B-Q4_K_M.gguf --local-dir ./m
 ```toml
 [model]
 test_model_path = "/home/etsme/.cache/modelscope/hub/models/Qwen/Qwen3-4B-GGUF/Qwen3-4B-Q4_K_M.gguf"
-context_size = 8192
-max_prompt_tokens = 8192
+context_size = 16384
+max_prompt_tokens = 16384
 max_generation_tokens = 2048
 ```
 
@@ -127,23 +109,85 @@ OpenAI 兼容的聊天补全接口。
 | top_p | float | 否 | Top-p sampling (默认 0.9) |
 | stream | bool | 否 | 是否流式输出 (默认 false) |
 
+**响应头** (`x-metrics`)：
+
+非流式响应返回性能指标 JSON：
+```json
+{
+  "throughput_tokens_per_sec": 2.06,
+  "time_to_first_token_ms": 2991,
+  "end_to_end_latency_ms": 9242,
+  "completion_tokens": 19,
+  "inter_token_latency_ms": 347.3,
+  "p90_latency_ms": 407,
+  "p99_latency_ms": 411
+}
+```
+
+**流式响应** (`[METRICS]` comment)：
+
+```
+data: {...}
+: [METRICS] {"throughput_tokens_per_sec":6.99,"time_to_first_token_ms":514,...}
+```
+
 ### GET /health
 
-健康检查接口。
+健康检查接口，返回服务状态和模型加载信息。
+
+### GET /v1/models
+
+返回可用模型列表。
+
+## 性能指标
+
+| 指标 | 说明 | 单位 |
+|------|------|------|
+| TTFT (Time To First Token) | 输入提交到首个输出 token 的时间 | ms |
+| Throughput | 每秒生成 token 数，衡量生成流畅度 | tokens/s |
+| E2E Latency | 端到端总耗时，从输入发起到完整输出返回 | ms |
+| ITL (Inter-Token Latency) | 相邻 token 间平均延迟，衡量生成流畅度 | ms |
+| P90/P99 Latency | 90%/99% 请求的时延上限，衡量长尾延迟 | ms |
 
 ## 项目结构
 
 ```
 lingbase/
 ├── src/
-│   ├── api/           # HTTP API 层
-│   ├── backend/       # 推理后端抽象
-│   ├── llama/         # llama.cpp FFI 封装
-│   └── infra/         # 基础设施 (配置、日志、健康检查)
+│   ├── api/           # HTTP API 层 (Axum)
+│   ├── backend/       # 推理后端抽象 (CPU/CUDA)
+│   ├── llama/        # llama.cpp FFI 封装
+│   └── infra/        # 基础设施 (配置、日志、健康检查)
 ├── config/            # 配置文件
 ├── lib/               # 预编译 llama.cpp 库
+├── tests/             # 集成测试 (Python)
 └── docs/              # 设计文档
 ```
+
+## 测试
+
+### 运行测试
+
+```bash
+# 安装依赖
+pip install requests pytest --break-system-packages
+
+# 运行测试
+./tests/run_tests.sh
+```
+
+### 测试用例
+
+| 测试 | 说明 |
+|------|------|
+| test_health | 健康检查端点 |
+| test_models_list | 模型列表 API |
+| test_non_streaming_basic | 非流式基本功能 |
+| test_non_streaming_metrics | 非流式指标验证 |
+| test_streaming_basic | 流式输出验证 |
+| test_streaming_ttft | TTFT 首 Token 时延测量 |
+| test_repeated_requests_stability | 重复请求稳定性 |
+| test_input_length_scaling | 输入长度扩展测试 (低/中/高) |
 
 ## 系统要求
 
@@ -157,6 +201,7 @@ lingbase/
 
 - [架构设计文档](docs/架构设计文档.md)
 - [GGUF 量化说明](docs/gguf-quantization.md)
+- [性能质量指标体系](docs/大模型性能质量指标体系——详细解释.pdf)
 
 ## License
 
