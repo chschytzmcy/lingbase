@@ -22,13 +22,13 @@ async fn main() -> anyhow::Result<()> {
     info!(
         host = %config.server.host,
         port = %config.server.port,
-        model_path = %config.model.test_model_path,
+        model_path = %config.model.model_path.display(),
         "Configuration loaded"
     );
 
     let backend = BackendFactory::create(
         BackendFactory::auto_detect(),
-        std::path::Path::new(&config.model.test_model_path),
+        std::path::Path::new(&config.model.model_path),
         config.model.context_size as i32,
     ).expect("Failed to create backend");
 

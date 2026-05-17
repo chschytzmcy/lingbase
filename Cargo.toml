@@ -27,11 +27,14 @@ metrics = "0.24"
 metrics-exporter-prometheus = "0.16"
 thiserror = "2.0"
 anyhow = "1.0"
+async-trait = "0.1"
 libc = "0.2"
 once_cell = "1.20"
 futures = "0.3"
 tokio-stream = "0.1"
 uuid = { version = "1.11", features = ["v4", "serde"] }
+deadpool = { version = "0.13", optional = true }
+rknn3-sys = { path = "lib/rknn3-sys", optional = true }
 
 [build-dependencies]
 cmake = "0.1"
@@ -41,6 +44,7 @@ cc = "1.0"
 default = []
 cuda = []
 rkllm = []
+rknn3 = ["deadpool", "rknn3-sys"]
 
 [profile.release]
 opt-level = 3
