@@ -6,11 +6,11 @@
 
 ```
 lib/
-├── x86_64/              # Linux x86_64 CPU 库
-├── cuda/                # Linux x86_64 NVIDIA CUDA GPU 库
-├── aarch64/             # Linux ARM64 CPU 库（软链接，指向 aarch64-rk-cpu）
-├── aarch64-raw/         # Linux ARM64 CPU 库（含 ARMv8.x 多架构优化变体）
-└── aarch64-rk-cpu/      # Linux ARM64 CPU 库（RK3588 设备本地编译版本）
+├── x86_64-cpu/       # Linux x86_64 CPU 库 (x86_64 软链接指向此目录)
+├── x86_64-cuda/      # Linux x86_64 NVIDIA CUDA GPU 库
+├── aarch64/          # Linux ARM64 CPU 库（软链接，指向 aarch64-rk-cpu）
+├── aarch64-raw/      # Linux ARM64 CPU 库（含 ARMv8.x 多架构优化变体）
+└── aarch64-rk-cpu/   # Linux ARM64 CPU 库（RK3588 设备本地编译版本）
 ```
 
 ## 软链接机制
@@ -29,8 +29,8 @@ ln -sfn aarch64-raw lib/aarch64
 
 | 目录 | glibc 要求 | 适用设备 |
 |------|-----------|----------|
-| `x86_64/` | ≥ 2.27 | x86_64 服务器 |
-| `cuda/` | ≥ 2.27 | NVIDIA GPU 服务器 |
+| `x86_64-cpu/` | ≥ 2.27 | x86_64 服务器 |
+| `x86_64-cuda/` | ≥ 2.27 | NVIDIA GPU 服务器 |
 | `aarch64-raw/` | ≥ 2.38 | 高版本 glibc 的 ARM64 设备 |
 | `aarch64-rk-cpu/` | ≥ 2.35 | RK3588 (Ubuntu 22.04) |
 
@@ -80,13 +80,13 @@ lib_dir = "aarch64"        # 通过软链接使用（当前指向 aarch64-rk-cpu
 
 ## 获取产物
 
-### 1. x86_64 (CPU) - 从 Release 下载
+### 1. x86_64-cpu - 从 Release 下载
 
 ```bash
-mkdir -p lib/x86_64
+mkdir -p lib/x86_64-cpu
 wget https://github.com/ggml-org/llama.cpp/releases/download/b9129/llama-b9129-bin-ubuntu-x64.tar.gz
 mkdir -p /tmp/x64_extract && tar -xzf llama-b9129-bin-ubuntu-x64.tar.gz -C /tmp/x64_extract
-cp /tmp/x64_extract/llama-b9129/lib*.so* lib/x86_64/
+cp /tmp/x64_extract/llama-b9129/lib*.so* lib/x86_64-cpu/
 ```
 
 ### 2. aarch64 (ARM64) - 远程编译
@@ -103,7 +103,7 @@ cmake --build build --parallel
 scp firefly@192.168.0.124:/home/firefly/llama.cpp/build/bin/lib*.so* lib/aarch64-raw/
 ```
 
-### 3. cuda (GPU) - 远程编译
+### 3. x86_64-cuda (GPU) - 远程编译
 
 ```bash
 # 在 GPU 服务器上编译
@@ -114,17 +114,17 @@ cmake -B build -DGGML_CUDA=ON -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 
 # 复制到本项目
-scp etsme@67.0.0.5:/home/etsme/llama.cpp/build/bin/lib*.so* lib/cuda/
+scp etsme@67.0.0.5:/home/etsme/llama.cpp/build/bin/lib*.so* lib/x86_64-cuda/
 ```
 
 ## 运行时
 
 ```bash
 # GPU 模式
-export LD_LIBRARY_PATH=lib/cuda:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=lib/x86_64-cuda:$LD_LIBRARY_PATH
 
 # CPU 模式 (x86_64)
-export LD_LIBRARY_PATH=lib/x86_64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=lib/x86_64-cpu:$LD_LIBRARY_PATH
 
 # CPU 模式 (ARM64)
 export LD_LIBRARY_PATH=lib/aarch64:$LD_LIBRARY_PATH

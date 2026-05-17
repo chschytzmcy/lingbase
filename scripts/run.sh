@@ -13,11 +13,11 @@ SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
 # Check if lib/ is next to run.sh (package layout) or in parent (project layout)
 # Package layout: run.sh and lib/ are siblings, lib/ contains arch subdirs
 # Project layout: lib/ is in parent directory of scripts/, with arch subdirs
-if [ -d "$SCRIPT_DIR/lib" ] && [ -d "$SCRIPT_DIR/lib/x86_64" -o -d "$SCRIPT_DIR/lib/aarch64" -o -d "$SCRIPT_DIR/lib/cuda" ]; then
+if [ -d "$SCRIPT_DIR/lib" ] && [ -d "$SCRIPT_DIR/lib/x86_64-cpu" -o -d "$SCRIPT_DIR/lib/aarch64" -o -d "$SCRIPT_DIR/lib/x86_64-cuda" ]; then
     # Package layout: run.sh and lib/ are siblings
     cd "$SCRIPT_DIR"
     PROJECT_ROOT="$SCRIPT_DIR"
-elif [ -d "$SCRIPT_DIR/../lib" ] && [ -d "$SCRIPT_DIR/../lib/x86_64" -o -d "$SCRIPT_DIR/../lib/aarch64" -o -d "$SCRIPT_DIR/../lib/cuda" ]; then
+elif [ -d "$SCRIPT_DIR/../lib" ] && [ -d "$SCRIPT_DIR/../lib/x86_64-cpu" -o -d "$SCRIPT_DIR/../lib/aarch64" -o -d "$SCRIPT_DIR/../lib/x86_64-cuda" ]; then
     # Project layout: lib/ is in parent directory of scripts/
     PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
     cd "$PROJECT_ROOT"
@@ -54,13 +54,13 @@ echo "[lingbase] Detected backend: $BACKEND"
 LIB_DIR="$PROJECT_ROOT/lib"
 
 # Determine library path based on architecture and backend
-# Structure: lib/cuda/ (CUDA), lib/x86_64/ (x86 CPU), lib/aarch64/ (ARM CPU)
+# Structure: lib/x86_64-cuda/ (x86 CUDA), lib/x86_64-cpu/ (x86 CPU), lib/aarch64/ (ARM CPU)
 LIB_ARCH_DIR=""
 
 if [ "$BACKEND" = "cuda" ]; then
-    if [ -d "$LIB_DIR/cuda" ]; then
-        LIB_ARCH_DIR="$LIB_DIR/cuda"
-        echo "[lingbase] Loading CUDA libraries from: $LIB_DIR/cuda"
+    if [ -d "$LIB_DIR/x86_64-cuda" ]; then
+        LIB_ARCH_DIR="$LIB_DIR/x86_64-cuda"
+        echo "[lingbase] Loading CUDA libraries from: $LIB_DIR/x86_64-cuda"
     elif [ -f "$LIB_DIR/libggml-cuda.so" ]; then
         # Fallback: new packaging may have CUDA libs directly in lib/
         LIB_ARCH_DIR="$LIB_DIR"
@@ -74,7 +74,7 @@ elif [ -d "$LIB_DIR/$ARCH" ]; then
     echo "[lingbase] Loading $ARCH libraries from: $LIB_DIR/$ARCH"
 else
     echo "[lingbase] Error: Library directory not found" >&2
-    echo "[lingbase] Expected: $LIB_DIR/cuda, $LIB_DIR/x86_64, or $LIB_DIR/aarch64" >&2
+    echo "[lingbase] Expected: $LIB_DIR/x86_64-cuda, $LIB_DIR/x86_64-cpu, or $LIB_DIR/aarch64" >&2
     exit 1
 fi
 

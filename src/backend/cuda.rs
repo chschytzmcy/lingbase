@@ -20,7 +20,7 @@ pub struct CudaBackend {
 
 impl CudaBackend {
     pub fn new<P: AsRef<Path>>(model_path: P, n_ctx: i32) -> InferenceResult<Self> {
-        let lib_dir = Path::new("lib/cuda");
+        let lib_dir = Path::new("lib/x86_64-cuda");
         let model = LlamaModel::from_file_with_backend(model_path, 999, lib_dir)?;
         let model_ptr = model.ptr().ok_or(InferenceError::ModelNotLoaded)?;
         let vocab_ptr = model.vocab_ptr().ok_or(InferenceError::BackendNotInitialized)?;

@@ -54,10 +54,10 @@ clean: ## 清理构建产物
 package: ## 打包当前平台
 	make clean
 	make build
-	mkdir -p dist/lingbase-$(VERSION)-x86_64/lib
+	mkdir -p dist/lingbase-$(VERSION)-x86_64/lib/x86_64-cpu
 	mkdir -p dist/lingbase-$(VERSION)-x86_64/config
 	cp target/release/lingbase dist/lingbase-$(VERSION)-x86_64/
-	cp -r lib/x86_64/* dist/lingbase-$(VERSION)-x86_64/lib/ 2>/dev/null || true
+	cp -r lib/x86_64-cpu/* dist/lingbase-$(VERSION)-x86_64/lib/x86_64-cpu/ 2>/dev/null || true
 	cp config/environment.toml dist/lingbase-$(VERSION)-x86_64/config/
 	cp scripts/run.sh dist/lingbase-$(VERSION)-x86_64/
 	tar -czf dist/lingbase-$(VERSION)-x86_64.tar.gz -C dist lingbase-$(VERSION)-x86_64
@@ -67,10 +67,10 @@ package: ## 打包当前平台
 package-x86_64: ## 打包 x86_64
 	make clean
 	make build
-	mkdir -p dist/lingbase-$(VERSION)-x86_64/lib
+	mkdir -p dist/lingbase-$(VERSION)-x86_64/lib/x86_64-cpu
 	mkdir -p dist/lingbase-$(VERSION)-x86_64/config
 	cp target/release/lingbase dist/lingbase-$(VERSION)-x86_64/
-	cp -r lib/x86_64/* dist/lingbase-$(VERSION)-x86_64/lib/
+	cp -r lib/x86_64-cpu/* dist/lingbase-$(VERSION)-x86_64/lib/x86_64-cpu/
 	cp config/environment.toml dist/lingbase-$(VERSION)-x86_64/config/
 	cp scripts/run.sh dist/lingbase-$(VERSION)-x86_64/
 	tar -czf dist/lingbase-$(VERSION)-x86_64.tar.gz -C dist lingbase-$(VERSION)-x86_64
@@ -79,10 +79,10 @@ package-x86_64: ## 打包 x86_64
 package-x86_64-cuda: ## 打包 x86_64 CUDA 版
 	make clean
 	cargo build --release --features cuda
-	mkdir -p dist/lingbase-$(VERSION)-x86_64-cuda/lib/cuda
+	mkdir -p dist/lingbase-$(VERSION)-x86_64-cuda/lib/x86_64-cuda
 	mkdir -p dist/lingbase-$(VERSION)-x86_64-cuda/config
 	cp target/release/lingbase dist/lingbase-$(VERSION)-x86_64-cuda/
-	cp -r lib/cuda/* dist/lingbase-$(VERSION)-x86_64-cuda/lib/cuda/
+	cp -r lib/x86_64-cuda/* dist/lingbase-$(VERSION)-x86_64-cuda/lib/x86_64-cuda/
 	cp config/environment.toml dist/lingbase-$(VERSION)-x86_64-cuda/config/
 	cp scripts/run.sh dist/lingbase-$(VERSION)-x86_64-cuda/
 	tar -czf dist/lingbase-$(VERSION)-x86_64-cuda.tar.gz -C dist lingbase-$(VERSION)-x86_64-cuda
@@ -102,19 +102,19 @@ package-aarch64: ## 打包 ARM64
 
 package-all: ## 打包所有架构版本
 	make build-x86_64
-	mkdir -p dist/lingbase-$(VERSION)-x86_64/lib
+	mkdir -p dist/lingbase-$(VERSION)-x86_64/lib/x86_64-cpu
 	mkdir -p dist/lingbase-$(VERSION)-x86_64/config
 	cp target/release/lingbase-cpu dist/lingbase-$(VERSION)-x86_64/
-	cp -r lib/x86_64/* dist/lingbase-$(VERSION)-x86_64/lib/
+	cp -r lib/x86_64-cpu/* dist/lingbase-$(VERSION)-x86_64/lib/x86_64-cpu/
 	cp config/environment.toml dist/lingbase-$(VERSION)-x86_64/config/
 	cp scripts/run.sh dist/lingbase-$(VERSION)-x86_64/
 	tar -czf dist/lingbase-$(VERSION)-x86_64.tar.gz -C dist lingbase-$(VERSION)-x86_64
 	@echo "打包完成: dist/lingbase-$(VERSION)-x86_64.tar.gz"
 	make build-x86_64-cuda
-	mkdir -p dist/lingbase-$(VERSION)-x86_64-cuda/lib/cuda
+	mkdir -p dist/lingbase-$(VERSION)-x86_64-cuda/lib/x86_64-cuda
 	mkdir -p dist/lingbase-$(VERSION)-x86_64-cuda/config
 	cp target/release/lingbase-cuda dist/lingbase-$(VERSION)-x86_64-cuda/
-	cp -r lib/cuda/* dist/lingbase-$(VERSION)-x86_64-cuda/lib/cuda/
+	cp -r lib/x86_64-cuda/* dist/lingbase-$(VERSION)-x86_64-cuda/lib/x86_64-cuda/
 	cp config/environment.toml dist/lingbase-$(VERSION)-x86_64-cuda/config/
 	cp scripts/run.sh dist/lingbase-$(VERSION)-x86_64-cuda/
 	tar -czf dist/lingbase-$(VERSION)-x86_64-cuda.tar.gz -C dist lingbase-$(VERSION)-x86_64-cuda

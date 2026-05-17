@@ -129,7 +129,7 @@ detect_remote_cuda() {
 }
 
 # Deploy package to remote server
-# Usage: deploy_to_remote "package_path" "user" "host" "port" "password" "remote_dir"
+# Usage: deploy_to_remote "package_path" "user" "host" "port" "password" "remote_dir" "arch" "lib_dir"
 deploy_to_remote() {
     local package="$1"
     local user="$2"
@@ -137,6 +137,8 @@ deploy_to_remote() {
     local port="${4:-22}"
     local password="$5"
     local remote_dir="${6:-/home/${user}/lingbase}"
+    local arch="${7:-}"
+    local lib_dir="${8:-}"
 
     log_info "Upload package..."
     sshpass -p "${password}" ssh -o StrictHostKeyChecking=no -p ${port} ${user}@${host} "mkdir -p ${remote_dir}"
@@ -145,7 +147,8 @@ deploy_to_remote() {
     log_info "Extract and configure..."
     sshpass -p "${password}" ssh -o StrictHostKeyChecking=no -p ${port} ${user}@${host} << 'EOF'
 set -e
-cd /home/firefly/lingbase
+REMOTE_DIR="/home/${USER}/lingbase"
+cd "$REMOTE_DIR"
 
 PACKAGE_FILE=$(ls lingbase-*.tar.gz 2>/dev/null | head -1)
 if [[ -z "$PACKAGE_FILE" ]]; then
@@ -156,10 +159,10 @@ fi
 # Backup existing config if exists
 EXTRACTED_DIR=$(tar -tzf "$PACKAGE_FILE" | head -1 | cut -d/ -f1)
 CONFIG_BACKUP=""
-if [[ -d "/home/firefly/lingbase/config" ]]; then
+if [[ -d "$REMOTE_DIR/config" ]]; then
     CONFIG_BACKUP="/tmp/config_backup_$(date +%Y%m%d_%H%M%S)"
     echo "[lingbase] Backup existing config to: $CONFIG_BACKUP"
-    cp -r /home/firefly/lingbase/config "$CONFIG_BACKUP"
+    cp -r "$REMOTE_DIR/config" "$CONFIG_BACKUP"
 fi
 
 echo "Extracting: $PACKAGE_FILE"

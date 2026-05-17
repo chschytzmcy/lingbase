@@ -8,7 +8,7 @@ fn main() {
 
     let (arch_lib_dir, link_libs) = match target_arch.as_str() {
         "x86_64" => {
-            let dir = lib_dir.join("x86_64");
+            let dir = lib_dir.join("x86_64-cpu");
             // Core libraries - ggml will dynamically load appropriate CPU variant
             let libs = vec!["llama", "ggml", "ggml-base", "llama-common"];
             (dir, libs)

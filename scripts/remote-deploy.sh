@@ -81,7 +81,7 @@ fi
 HAS_CUDA=$(detect_remote_cuda "$REMOTE_USER" "$REMOTE_HOST" "$REMOTE_PORT" "$REMOTE_PASSWORD")
 
 log_info "Deploy target: ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}"
-log_info "Arch: ${REMOTE_ARCH}, CUDA: ${HAS_CUDA}"
+log_info "Arch: ${REMOTE_ARCH}, lib_dir: ${REMOTE_LIB_DIR}, CUDA: ${HAS_CUDA}"
 
 # Build
 do_build() {
@@ -129,13 +129,21 @@ do_package() {
     [[ -f "$binary" ]] && cp "$binary" "dist/${package_name}/"
 
     if [[ "$HAS_CUDA" == "true" ]]; then
-        # CUDA build: libraries in lib/cuda/
-        mkdir -p "dist/${package_name}/lib/cuda"
-        [[ -d "lib/cuda" ]] && cp -r lib/cuda/* "dist/${package_name}/lib/cuda/"
+        # CUDA build: libraries in lib/x86_64-cuda/
+        mkdir -p "dist/${package_name}/lib/x86_64-cuda"
+        [[ -d "lib/x86_64-cuda" ]] && cp -r lib/x86_64-cuda/* "dist/${package_name}/lib/x86_64-cuda/"
     else
-        # CPU build: include arch-specific libraries in lib/x86_64/ or lib/aarch64/
+        # CPU build: include arch-specific libraries in lib/{arch}/
         local lib_src="${REMOTE_LIB_DIR:-lib/${arch}}"
         [[ -d "$lib_src" ]] && { mkdir -p "dist/${package_name}/lib/${arch}"; cp -r "$lib_src"/* "dist/${package_name}/lib/${arch}/"; }
+
+        # Create symlink: lib/{arch} -> lib/{lib_src}
+        # This allows run.sh to find libraries via ARCH=$(uname -m)
+        if [[ -n "$REMOTE_LIB_DIR" ]] && [[ "$REMOTE_LIB_DIR" != "lib/${arch}" ]]; then
+            rm -f "dist/${package_name}/lib/${arch}"
+            ln -sf "$REMOTE_LIB_DIR" "dist/${package_name}/lib/${arch}"
+            log_info "Created symlink: lib/${arch} -> ${REMOTE_LIB_DIR}"
+        fi
     fi
 
     cp config/environment.toml "dist/${package_name}/config/"

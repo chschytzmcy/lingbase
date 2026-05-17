@@ -78,9 +78,9 @@ impl LlamaModel {
     pub fn from_file<P: AsRef<Path>>(path: P, n_gpu_layers: i32) -> InferenceResult<Self> {
         let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
         let lib_dir = match arch.as_str() {
-            "x86_64" => "lib/x86_64",
+            "x86_64" => "lib/x86_64-cpu",
             "aarch64" => "lib/aarch64",
-            _ => "lib/x86_64",
+            _ => "lib/x86_64-cpu",
         };
 
         // Get the directory containing the executable
@@ -98,8 +98,8 @@ impl LlamaModel {
         } else if fallback_path.exists() {
             Self::from_file_with_backend(path, n_gpu_layers, fallback_path)
         } else {
-            // Last resort: try aarch64 if we're on ARM and x86_64 doesn't exist
-            if arch == "aarch64" && lib_dir == "lib/x86_64" {
+            // Last resort: try aarch64 if we're on ARM and x86_64-cpu doesn't exist
+            if arch == "aarch64" && lib_dir == "lib/x86_64-cpu" {
                 let alt_path = std::path::Path::new("lib/aarch64");
                 if alt_path.exists() {
                     return Self::from_file_with_backend(path, n_gpu_layers, alt_path);
