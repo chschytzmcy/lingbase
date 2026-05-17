@@ -34,7 +34,7 @@ futures = "0.3"
 tokio-stream = "0.1"
 uuid = { version = "1.11", features = ["v4", "serde"] }
 deadpool = { version = "0.13", optional = true }
-rknn3-sys = { path = "lib/rknn3-sys", optional = true }
+aarch64-rknn = { path = "lib/aarch64-rknn", optional = true }
 
 [build-dependencies]
 cmake = "0.1"
@@ -44,7 +44,7 @@ cc = "1.0"
 default = []
 cuda = []
 rkllm = []
-rknn3 = ["deadpool", "rknn3-sys"]
+rknn3 = ["deadpool", "aarch64-rknn"]
 
 [profile.release]
 opt-level = 3

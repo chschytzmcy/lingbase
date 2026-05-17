@@ -1,0 +1,13 @@
+[package]
+name = "aarch64-rknn"
+version = "0.1.0"
+edition = "2024"
+description = "Safe Rust bindings for Rockchip RKNN Runtime API"
+license = "MIT"
+
+[dependencies]
+thiserror = "2.0"
+tracing = "0.1"
+
+[dev-dependencies]
+clap = { version = "4.0", features = ["derive"] }

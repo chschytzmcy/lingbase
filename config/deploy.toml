@@ -25,3 +25,12 @@ password = "firefly"
 description = "ARM64 Server"
 arch = "aarch64"
 lib_dir = "aarch64-rk-cpu"
+
+[remote.RK3588-server]
+host = "192.168.0.124"
+user = "firefly"
+port = 22
+password = "firefly"
+description = "Firefly RK3588 NPU Server - use rknn3-aarch64 lib"
+arch = "aarch64"
+lib_dir = "rknn3-aarch64"

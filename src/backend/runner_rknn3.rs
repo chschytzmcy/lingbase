@@ -83,8 +83,8 @@ impl From<Rknn3Error> for BackendError {
 
 /// LLM 实例（Context + Session）
 struct LlmInstance {
-    _ctx: rknn3_sys::prelude::Context,
-    session: rknn3_sys::prelude::Session,
+    _ctx: aarch64_rknn::prelude::Context,
+    session: aarch64_rknn::prelude::Session,
 }
 
 /// LLM 池
@@ -105,7 +105,7 @@ impl Rknn3Backend {
         let core_mask = u32::from_str_radix(options.core_mask.trim_start_matches("0x"), 16).unwrap_or(0xff);
 
         // 1. 初始化主 Context
-        let ctx = rknn3_sys::prelude::Context::new()
+        let ctx = aarch64_rknn::prelude::Context::new()
             .map_err(|e| Rknn3Error::ModelInitFailed(format!("rknn3_init failed: {}", e)))?;
 
         // 2. 加载模型
@@ -119,7 +119,7 @@ impl Rknn3Backend {
         .map_err(|e| Rknn3Error::ModelInitFailed(format!("load_model failed: {}", e)))?;
 
         // 3. Model init
-        let mut config = rknn3_sys::prelude::ModelConfig::new().core_mask(core_mask);
+        let mut config = aarch64_rknn::prelude::ModelConfig::new().core_mask(core_mask);
         ctx.model_init(&mut config)
             .map_err(|e| Rknn3Error::ModelInitFailed(format!("model_init failed: {}", e)))?;
 
@@ -169,13 +169,13 @@ impl Rknn3Backend {
     }
 }
 
-fn create_session(ctx: &rknn3_sys::prelude::Context, options: &Rknn3Options)
-    -> Result<rknn3_sys::prelude::Session, Rknn3Error>
+fn create_session(ctx: &aarch64_rknn::prelude::Context, options: &Rknn3Options)
+    -> Result<aarch64_rknn::prelude::Session, Rknn3Error>
 {
     let bos_ids: Vec<i32> = options.special_bos_id.clone();
     let eos_ids: Vec<i32> = options.special_eos_id.clone();
 
-    let llm_params = rknn3_sys::prelude::LlmParams::new(&options.logits_name, options.vocab_size)
+    let llm_params = aarch64_rknn::prelude::LlmParams::new(&options.logits_name, options.vocab_size)
         .map_err(|e| Rknn3Error::ModelInitFailed(format!("LlmParams::new failed: {}", e)))?
         .max_context_len(options.context_size as i32)
         .top_k(options.top_k as i32)
@@ -186,7 +186,7 @@ fn create_session(ctx: &rknn3_sys::prelude::Context, options: &Rknn3Options)
         .special_eos_id(&eos_ids)
         .skip_special_token(options.skip_special_token);
 
-    let mut session = rknn3_sys::prelude::Session::new(ctx, &mut [llm_params])
+    let mut session = aarch64_rknn::prelude::Session::new(ctx, &mut [llm_params])
         .map_err(|e| Rknn3Error::SessionError(format!("Session::new failed: {}", e)))?;
 
     Ok(session)
@@ -249,7 +249,7 @@ impl LLMBackend for Rknn3Backend {
         // 创建 stop handle
         let stop_handle = instance.session.stop_handle();
 
-        let mut llm_input = rknn3_sys::prelude::LlmInput::tokens(token_ids)
+        let mut llm_input = aarch64_rknn::prelude::LlmInput::tokens(token_ids)
             .role("user")
             .unwrap();
 
@@ -257,7 +257,7 @@ impl LLMBackend for Rknn3Backend {
             llm_input = llm_input.enable_thinking(true);
         }
 
-        let mut infer_param = rknn3_sys::prelude::InferParams::new()
+        let mut infer_param = aarch64_rknn::prelude::InferParams::new()
             .max_new_tokens(max_tokens as i32)
             .keep_history(false);
 
