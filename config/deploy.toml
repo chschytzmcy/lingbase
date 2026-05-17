@@ -1,5 +1,13 @@
 # Lingbase 部署配置
 
+[remote.x86-server]
+host = "67.0.0.2"
+user = "etsme"
+port = 22
+password = "etsme"
+arch = "x86_64"
+lib_dir = "x86_64-cpu"
+
 [remote.gpu-server]
 host = "67.0.0.5"
 user = "etsme"
