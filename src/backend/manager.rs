@@ -8,7 +8,7 @@ use tokio::sync::RwLock;
 use tracing::{info, warn};
 
 use crate::infra::config::ModelConfig;
-use crate::backend::traits::LLMBackend;
+use crate::backend::traits::{BaseBackend, LLMBackend};
 use crate::backend::error::BackendError;
 use crate::backend::types::ResourceType;
 

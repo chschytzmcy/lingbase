@@ -24,15 +24,9 @@ impl BackendFactory {
                 let backend = super::cpu::CpuBackend::new(model_path, n_ctx)?;
                 Ok(Arc::new(backend))
             }
-            BackendType::Rknn3 => {
-                #[cfg(feature = "rkllm")]
-                {
-                    let backend = super::rkllm::RkllmBackend::new(model_path, n_ctx)?;
-                    return Ok(Arc::new(backend));
-                }
-                #[cfg(not(feature = "rkllm"))]
-                Err(InferenceError::BackendNotAvailable("RKNN3".to_string()))
-            }
+            BackendType::Rknn3 => Err(InferenceError::BackendNotAvailable(
+                "RKNN3 backend is managed by BackendManager, not BackendFactory".to_string()
+            )),
             BackendType::Proxy => Err(InferenceError::BackendNotAvailable("Proxy backend not yet implemented".to_string()))
         }
     }

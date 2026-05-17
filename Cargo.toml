@@ -34,7 +34,9 @@ futures = "0.3"
 tokio-stream = "0.1"
 uuid = { version = "1.11", features = ["v4", "serde"] }
 deadpool = { version = "0.13", optional = true }
+deadpool-runtime = { version = "0.3", optional = true }
 aarch64-rknn = { path = "lib/aarch64-rknn", optional = true }
+shimmytok = { version = "0.7", optional = true }
 
 [build-dependencies]
 cmake = "0.1"
@@ -44,7 +46,7 @@ cc = "1.0"
 default = []
 cuda = []
 rkllm = []
-rknn3 = ["deadpool", "aarch64-rknn"]
+rknn3 = ["deadpool/rt_tokio_1", "deadpool-runtime/tokio_1", "aarch64-rknn", "shimmytok"]
 
 [profile.release]
 opt-level = 3

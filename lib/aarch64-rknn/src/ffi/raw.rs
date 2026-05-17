@@ -6,5 +6,6 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 #![allow(clippy::all)]
+#![allow(unsafe_extern_blocks)]
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
